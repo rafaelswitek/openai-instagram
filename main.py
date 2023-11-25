@@ -1,6 +1,7 @@
 import openai
 from dotenv import load_dotenv
 import os
+from pydub import AudioSegment
 
 
 def openai_whisper_transcrever(caminho_audio, nome_arquivo, modelo_whisper, openai):
@@ -101,28 +102,55 @@ def openai_gpt_gerar_texto_imagem(resumo_instagram, nome_arquivo, openai):
     """
 
     prompt_usuario = f"Reescreva o texto a seguir, em uma frase, para que descrever o texto abaixo em um tweet: {resumo_instagram}"
-    
+
     resposta = openai.ChatCompletion.create(
         model="gpt-4",
         messages=[
-                {
-                        "role": "system",
-                        "content" : prompt_sistema
-                },
-                {
-                        "role": "user",
-                        "content": prompt_usuario
-                }
+            {"role": "system", "content": prompt_sistema},
+            {"role": "user", "content": prompt_usuario},
         ],
-        temperature = 0.6
+        temperature=0.6,
     )
 
     texto_para_imagem = resposta["choices"][0]["message"]["content"]
 
-    with open(f"texto_para_geracao_imagem_{nome_arquivo}.txt", "w",encoding='utf-8') as arquivo_texto:
-            arquivo_texto.write(texto_para_imagem)
+    with open(
+        f"texto_para_geracao_imagem_{nome_arquivo}.txt", "w", encoding="utf-8"
+    ) as arquivo_texto:
+        arquivo_texto.write(texto_para_imagem)
 
     return texto_para_imagem
+
+
+def openai_dalle_gerar_imagem(
+    resolucao, resumo_para_imagem, nome_arquivo, openai, qtd_imagens=1
+):
+    print("Criando uma imagem utilizando a API do DALL-E ...")
+
+    prompt_user = (
+        f"Uma pintura ultra futurista, textless, 3d que retrate: {resumo_para_imagem}"
+    )
+
+    resposta = openai.Image.create(prompt=prompt_user, n=qtd_imagens, size=resolucao)
+
+    return resposta["data"]
+
+
+def ferramenta_download_imagem(nome_arquivo, imagem_gerada, qtd_imagens=1):
+    lista_nome_imagens = []
+    try:
+        for contador_imagens in range(0, qtd_imagens):
+            caminho = imagem_gerada[contador_imagens].url
+            imagem = requests.get(caminho)
+
+            with open(f"{nome_arquivo}_{contador_imagens}.png", "wb") as arquivo_imagem:
+                arquivo_imagem.write(imagem.content)
+
+            lista_nome_imagens.append(f"{nome_arquivo}_{contador_imagens}.png")
+        return lista_nome_imagens
+    except:
+        print("Ocorreu um erro!")
+        return None
 
 
 def ferramenta_ler_arquivo(nome_arquivo):
@@ -133,22 +161,77 @@ def ferramenta_ler_arquivo(nome_arquivo):
         print(f"Erro no carregamento de arquivo: {e}")
 
 
+def ferramenta_transcrever_audio_em_partes(caminho_audio_podcast, nome_arquivo):
+    print("Iniciando corte .. ")
+    audio = AudioSegment.from_mp3(caminho_audio_podcast)
+
+    dez_minutos = 10 * 60 * 1000
+
+    contador_pedaco = 1
+    arquivos_exportados = []
+
+    while len(audio) > 0:
+        pedaco = audio[:dez_minutos]
+        nome_pedaco_audio = f"{nome_arquivo}_parte_{contador_pedaco}.mp3"
+        pedaco.export(nome_pedaco_audio, format="mp3")
+        arquivos_exportados.append(nome_pedaco_audio)
+        audio = audio[dez_minutos:]
+        contador_pedaco += 1
+
+    return arquivos_exportados
+
+
+def openai_whisper_transcrever_em_partes(
+    caminho_audio, nome_arquivo, modelo_whisper, openai
+):
+    print("Estou transcrevendo com o whispers ...")
+
+    lista_arquivos_de_audio = ferramenta_transcrever_audio_em_partes(
+        caminho_audio, nome_arquivo
+    )
+    lista_pedacos_de_audio = []
+
+    for um_pedaco_audio in lista_arquivos_de_audio:
+        audio = open(um_pedaco_audio, "rb")
+
+        resposta = openai.Audio.transcribe(
+            api_key=openai.api_key, model=modelo_whisper, file=audio
+        )
+
+        transcricao = resposta.text
+        lista_pedacos_de_audio.append(transcricao)
+
+    transcricao = "".join(lista_pedacos_de_audio)
+
+
 def main():
     load_dotenv()
 
     caminho_audio = "audios/hipsters_154_testes_short.mp3"
     nome_arquivo = "hipsters_154_testes_short"
     url_podcast = "https://www.hipsters.tech/testes-de-software-e-inteligencia-artificial-hipsters-154/"
+    resolucao = "1024x1024"
+    qtd_imagens = 4
 
     api_openai = os.getenv("API_KEY_OPENAI")
     openai.api_key = api_openai
 
     modelo_whisper = "whisper-1"
 
-    transcricao_completa = ferramenta_ler_arquivo("texto_completo_hipsters_154_testes_short.txt")
-    resumo_instagram = ferramenta_ler_arquivo("resumo_instagram_hipsters_154_testes_short.txt")
+    transcricao_completa = ferramenta_ler_arquivo(
+        "texto_completo_hipsters_154_testes_short.txt"
+    )
+    resumo_instagram = ferramenta_ler_arquivo(
+        "resumo_instagram_hipsters_154_testes_short.txt"
+    )
     hashtags = ferramenta_ler_arquivo("hashtag_hipsters_154_testes_short.txt")
-    resumo_imagem_instagram = openai_gpt_gerar_texto_imagem(resumo_instagram, nome_arquivo, openai)
+    resumo_imagem_instagram = ferramenta_ler_arquivo(
+        "texto_para_geracao_imagem_hipster_154_teste_short.txt"
+    )
+    imagem_gerada = openai_dalle_gerar_imagem(
+        resolucao, resumo_imagem_instagram, nome_arquivo, openai, qtd_imagens
+    )
+    ferramenta_download_imagem(nome_arquivo, imagem_gerada, qtd_imagens)
 
 
 if __name__ == "__main__":
