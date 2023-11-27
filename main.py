@@ -207,7 +207,7 @@ def ferramenta_ler_arquivo(nome_arquivo):
 #     transcricao = "".join(lista_pedacos_de_audio)
 
 
-# def selecionar_imagem(Lista_nome_imagens):
+# def selecionar_imagem(lista_nome_imagens):
 #     return lista_nome_imagens[
 #         int(
 #             input(
@@ -276,26 +276,26 @@ def main():
         "resumo_instagram_output.txt"
     )
     
-    # openai_gpt_criar_hashtag(resumo_instagram, nome_arquivo, openai) #3
+    # # openai_gpt_criar_hashtag(resumo_instagram, nome_arquivo, openai) #3
     hashtags = ferramenta_ler_arquivo("hashtag_output.txt")
     
-    # openai_gpt_gerar_texto_imagem(resumo_instagram, nome_arquivo, openai) #4
-    resumo_imagem_instagram = ferramenta_ler_arquivo(
-        "texto_para_geracao_imagem_output.txt"
-    )
+    # # openai_gpt_gerar_texto_imagem(resumo_instagram, nome_arquivo, openai) #4
+    # resumo_imagem_instagram = ferramenta_ler_arquivo(
+    #     "texto_para_geracao_imagem_output.txt"
+    # )
     
-    imagem_gerada = openai_dalle_gerar_imagem( #5
-        resolucao, resumo_imagem_instagram, nome_arquivo, openai, qtd_imagens
-    )
-    print(imagem_gerada)
+    # imagem_gerada = openai_dalle_gerar_imagem( #5
+    #     resolucao, resumo_imagem_instagram, nome_arquivo, openai, qtd_imagens
+    # )
+    # print(imagem_gerada)
     
-    lista_imagens_geradas = ferramenta_download_imagem( #6
-        nome_arquivo, imagem_gerada, qtd_imagens
-    )
-    print(lista_imagens_geradas)
+    # lista_imagens_geradas = ferramenta_download_imagem( #6
+    #     nome_arquivo, imagem_gerada, qtd_imagens
+    # )
+    # print(lista_imagens_geradas)
     
-    caminho_imagem_escolhida = selecionar_imagem(lista_imagens_geradas)
-    # caminho_imagem_escolhida = 'img-uFUO6lPgcDETHzQkEPyD0LJA.png'
+    # caminho_imagem_escolhida = selecionar_imagem(lista_imagens_geradas)
+    caminho_imagem_escolhida = 'img-IZHlSifTDISE3ZYndzG64iZd.png'
     caminho_imagem_convertida = ferramenta_converter_png_para_jpg( #7
         caminho_imagem_escolhida, nome_arquivo
     )
